@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart Parking Slot Allocation System</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; background: #e0f7fa; margin:0; }
+  h1 { background: linear-gradient(90deg, #007bff, #00c6ff); color:white; padding:15px; margin:0; }
+  select, input, button { padding:10px; margin:8px; border-radius:6px; border:1px solid #ccc; }
+  .slot-container { display:grid; grid-template-columns: repeat(5,1fr); gap:15px; margin:20px; }
+  .slot { width:120px; height:100px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+          font-weight:bold; cursor:pointer; transition: transform .3s, background .3s, color .3s, box-shadow .3s; }
+  .available { background: #66bb6a; color: white; } /* green */
+  .booked { background: #ffeb3b; color: black; } /* yellow */
+  .expired { background: #f44336; color:white; animation: pulse 1s infinite; }
+  .expired:hover { transform: scale(1.1); box-shadow: 0 0 15px rgba(255,0,0,0.8); }
+  @keyframes pulse { 0%{transform:scale(1);} 50%{transform:scale(1.05);} 100%{transform:scale(1);} }
+  #bookingForm { display:none; background:white; padding:20px; border-radius:10px; width:350px; margin:20px auto; box-shadow:0 0 15px rgba(0,0,0,.2); }
+  #takeVehicleBtn { background:#ff5722; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; }
+  #takeVehicleBtn:hover { background:#e64a19; }
+</style>
+</head>
+<body>
+<h1>Smart Parking Slot Allocation System</h1>
+
+<div>
+  <label>City:</label>
+  <select id="city" onchange="loadAreas()">
+    <option value="">Select City</option>
+    <option>Chennai</option>
+    <option>Coimbatore</option>
+    <option>Bangalore</option>
+    <option>Mumbai</option>
+    <option>Delhi</option>
+    <option>Hyderabad</option>
+    <option>Pune</option>
+    <option>Kolkata</option>
+  </select>
+  <label>Area:</label>
+  <select id="area"></select>
+</div>
+
+<div id="slotSection" style="display:none;">
+  <h2>Available Slots</h2>
+  <div class="slot-container" id="slots"></div>
+</div>
+
+<div id="bookingForm">
+  <h3 id="formTitle">Book Slot</h3>
+  <input id="name" placeholder="Name"><br>
+  <input id="email" type="email" placeholder="Email"><br>
+  <select id="vehicle">
+    <option value="2 Wheeler">2 Wheeler</option>
+    <option value="3 Wheeler">3 Wheeler</option>
+    <option value="4 Wheeler">4 Wheeler</option>
+  </select><br>
+  <input id="time" placeholder="Enter time (e.g. 1 hr or 30 mins)"><br>
+  <button id="bookBtn" onclick="confirmBooking()">Confirm Booking</button>
+  <button id="takeVehicleBtn" onclick="takeVehicle()" style="display:none;">Take Vehicle & Pay</button>
+</div>
+
+<script>
+const cityAreas = {
+  "Chennai":["Anna Nagar","T Nagar","Velachery","Adyar","Besant Nagar","Guindy","Chromepet","Tambaram","Perambur","Nungambakkam"],
+  "Coimbatore":["RS Puram","Peelamedu","Gandhipuram","Saibaba Colony","Saravanampatti","Town Hall","Ukkadam","Kovaipudur","Ramanathapuram"],
+  "Bangalore":["Whitefield","MG Road","Koramangala","Indiranagar","HSR Layout","BTM Layout","Electronic City","Yelahanka","Jayanagar","Rajajinagar"],
+  "Mumbai":["Andheri","Bandra","Juhu","Powai","Dadar","Borivali","Churchgate","Colaba","Worli","Chembur"],
+  "Delhi":["Connaught Place","Karol Bagh","Dwarka","Rohini","Lajpat Nagar","Saket","Janakpuri","Chandni Chowk","Vasant Kunj","Greater Kailash"],
+  "Hyderabad":["Banjara Hills","Jubilee Hills","Secunderabad","Gachibowli","Hitech City","Madhapur","Begumpet","Kukatpally","Charminar","Mehdipatnam"],
+  "Pune":["Shivaji Nagar","Kothrud","Viman Nagar","Koregaon Park","Wakad","Aundh","Hinjewadi","Baner","Camp","Yerwada"],
+  "Kolkata":["Salt Lake","Park Street","Howrah","Dum Dum","Garia","New Town","Behala","Ballygunge","Esplanade","Jadavpur"]
+};
+
+let slots = [];
+let selectedSlot = null;
+
+function loadAreas(){
+  const city = document.getElementById("city").value;
+  const area = document.getElementById("area");
+  area.innerHTML="";
+  if(city && cityAreas[city]){
+    cityAreas[city].forEach(a=>{
+      let opt=document.createElement("option");
+      opt.text=a; area.add(opt);
+    });
+    document.getElementById("slotSection").style.display="block";
+    renderSlots();
+  } else {
+    document.getElementById("slotSection").style.display="none";
+  }
+}
+
+function renderSlots(){
+  const container=document.getElementById("slots");
+  container.innerHTML="";
+  slots=Array(15).fill().map((_,i)=>({id:i+1,status:"available",user:null,startTime:null,endTime:null}));
+  slots.forEach(slot=>{
+    let div=document.createElement("div");
+    div.className="slot available";
+    div.textContent="Slot "+slot.id;
+    div.onclick=()=>openBookingForm(slot.id);
+    container.appendChild(div);
+  });
+}
+
+function openBookingForm(id){
+  selectedSlot=id;
+  const slot = slots.find(s=>s.id===id);
+  document.getElementById("bookingForm").style.display="block";
+  if(slot.status==="available"){
+    document.getElementById("formTitle").textContent="Book Slot";
+    document.getElementById("bookBtn").style.display="inline-block";
+    document.getElementById("takeVehicleBtn").style.display="none";
+    document.getElementById("name").value="";
+    document.getElementById("email").value="";
+    document.getElementById("vehicle").value="2 Wheeler";
+    document.getElementById("time").value="";
+  } else {
+    document.getElementById("formTitle").textContent="Take Vehicle & Pay";
+    document.getElementById("bookBtn").style.display="none";
+    document.getElementById("takeVehicleBtn").style.display="inline-block";
+    document.getElementById("name").value = slot.user.name;
+    document.getElementById("email").value = slot.user.email;
+    document.getElementById("vehicle").value = slot.user.vehicle;
+    const remainingMinutes = Math.max(0, Math.ceil((slot.endTime - Date.now())/60000));
+    document.getElementById("time").value = remainingMinutes + " mins remaining";
+  }
+}
+
+function confirmBooking(){
+  const name=document.getElementById("name").value;
+  const email=document.getElementById("email").value;
+  const vehicle=document.getElementById("vehicle").value;
+  const timeInput=document.getElementById("time").value.toLowerCase();
+  if(!name||!email||(!timeInput.includes("hr") && !timeInput.includes("min"))) return alert("Enter valid details");
+
+  let minutes=0;
+  if(timeInput.includes("hr")) minutes+=parseInt(timeInput)*60;
+  if(timeInput.includes("min")) minutes+=parseInt(timeInput);
+  if(minutes<=0) return alert("Invalid time");
+
+  const slot = slots.find(s=>s.id===selectedSlot);
+  slot.status="booked";
+  slot.user={name,email,vehicle,time:minutes};
+  slot.startTime=Date.now();
+  slot.endTime=slot.startTime + minutes*60000;
+  updateSlotUI(slot);
+
+  alert(`Slot ${slot.id} booked for ${timeInput}. Total cost: ₹${minutes}`);
+  document.getElementById("bookingForm").style.display="none";
+
+  // Highlight last 10 mins
+  const warningTime = Math.max(slot.endTime - Date.now() - 10*60000, 0);
+  setTimeout(()=>{
+    if(slot.status==="booked"){
+      alert(`Slot ${slot.id} has 10 minutes remaining`);
+    }
+  }, warningTime);
+
+  // Expire slot automatically
+  setTimeout(()=>{
+    if(slot.status==="booked"){
+      slot.status="expired";
+      updateSlotUI(slot);
+      alert(`Slot ${slot.id} time exceeded!`);
+    }
+  }, minutes*60000);
+}
+
+function takeVehicle(){
+  const slot = slots.find(s=>s.id===selectedSlot);
+  const actualMinutes = Math.ceil((Date.now() - slot.startTime)/60000);
+  const cost = actualMinutes;
+
+  alert(`Vehicle taken. Duration: ${actualMinutes} mins. Total cost: ₹${cost}`);
+
+  slot.status="available";
+  slot.user=null;
+  slot.startTime=null;
+  slot.endTime=null;
+  updateSlotUI(slot);
+  document.getElementById("bookingForm").style.display="none";
+}
+
+function updateSlotUI(slot){
+  const div=document.querySelectorAll(".slot")[slot.id-1];
+  if(slot.status==="available") div.className="slot available";
+  else if(slot.status==="booked") div.className="slot booked";
+  else if(slot.status==="expired") div.className="slot expired";
+  div.textContent="Slot "+slot.id;
+}
+</script>
+</body>
+</html>
