@@ -1,0 +1,16 @@
+body { font-family: Arial, sans-serif; text-align: center; background: #f0f4c3; margin:0; }
+h1 { background: linear-gradient(90deg, #4caf50, #8bc34a); color:white; padding:15px; margin:0; }
+select, input, button { padding:10px; margin:8px; border-radius:6px; border:1px solid #ccc; }
+.slot-container { display:grid; grid-template-columns: repeat(5,1fr); gap:15px; margin:20px; }
+.slot { width:120px; height:100px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+        font-weight:bold; cursor:pointer; transition: transform .3s, background .3s, box-shadow .3s; }
+.available { background: #66bb6a; color: white; }  /* green */
+.booked { background: #ffeb3b; color: black; }    /* yellow */
+.expired { background: #f44336; color:white; animation: pulse 1s infinite; }
+.expired:hover { transform: scale(1.1); box-shadow: 0 0 15px rgba(255,0,0,0.8); }
+@keyframes pulse { 0%{transform:scale(1);} 50%{transform:scale(1.05);} 100%{transform:scale(1);} }
+#bookingForm { display:none; background:white; padding:20px; border-radius:10px; width:350px; margin:20px auto; box-shadow:0 0 15px rgba(0,0,0,.2); }
+#bookBtn { background:#4caf50; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; }
+#bookBtn:hover { background:#388e3c; }
+#takeVehicleBtn { background:#ff5722; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; }
+#takeVehicleBtn:hover { background:#e64a19; }
