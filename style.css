@@ -1,4 +1,4 @@
-body { font-family: Arial, sans-serif; text-align: center; background: #f0f4c3; margin:0; }
+body { font-family: Arial, sans-serif; text-align: center; background: yellow; margin:0; }
 h1 { background: linear-gradient(90deg, #4caf50, #8bc34a); color:white; padding:15px; margin:0; }
 select, input, button { padding:10px; margin:8px; border-radius:6px; border:1px solid #ccc; }
 .slot-container { display:grid; grid-template-columns: repeat(5,1fr); gap:15px; margin:20px; }
